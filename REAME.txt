@@ -1,0 +1,6 @@
+Scripts for rebuilding game graphs for Joel based on game logs
+
+Usage:
+_ Put the logs into logs folder
+_ Run split.sh providing the log name to split data according to player ids. Note that the script will remove everything in the data folder before spliting. An example of running this script: /path/to/split.sh game_log.txt (just the log name; no path)
+_ More instructions comming soon
