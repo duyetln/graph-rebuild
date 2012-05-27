@@ -15,9 +15,15 @@ DATA_DIR="$GAME_DIR/data"
 LOG_DIR="$GAME_DIR/logs"
 SCRIPT_DIR="$GAME_DIR/scripts"
 
-LOG_NAME="$1"
+LOG_PATH="$1"
+LOG_NAME=`basename $LOG_PATH`
 
-[ ! -f $LOG_DIR/$LOG_NAME ] && echo "log file does not exist" && exit
+
+[ ! -f $LOG_PATH ] && echo "Log file does not exist" && exit
+[ ! -d $DATA_DIR ] && mkdir $DATA_DIR
+[ ! -d $LOG_DIR ] && mkdir $LOG_DIR
+
+cp $LOG_PATH $LOG_DIR
 
 #some variables
 GAME_START="GAME_INITIALIZED"
