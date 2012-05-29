@@ -868,6 +868,7 @@ function drawEdge(edge, paper){
 		var a = edge.a;
 		var b = edge.b;
 
+
 		var curve = getPath(edge) //get the curve's path
 		var normal = getUnitNormal(edge)
 		var e = paper.path(curve).attr({'stroke-width':5})

@@ -10,10 +10,10 @@
 # other events (0 or many occurrences)
 
 #get the root directory and others
-GAME_DIR="$( cd "$( dirname "$0" )"/.. && pwd )"
-DATA_DIR="$GAME_DIR/data"
-LOG_DIR="$GAME_DIR/logs"
-SCRIPT_DIR="$GAME_DIR/scripts"
+ROOT_DIR="$( cd "$( dirname "$0" )"/.. && pwd )"
+DATA_DIR="$ROOT_DIR/data"
+LOG_DIR="$ROOT_DIR/logs"
+SCRIPT_DIR="$ROOT_DIR/scripts"
 
 LOG_PATH="$1"
 LOG_NAME=`basename $LOG_PATH`
@@ -23,7 +23,7 @@ LOG_NAME=`basename $LOG_PATH`
 [ ! -d $DATA_DIR ] && mkdir $DATA_DIR
 [ ! -d $LOG_DIR ] && mkdir $LOG_DIR
 
-cp $LOG_PATH $LOG_DIR
+cp -f $LOG_PATH $LOG_DIR
 
 #some variables
 GAME_START="GAME_INITIALIZED"

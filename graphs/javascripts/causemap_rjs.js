@@ -333,13 +333,15 @@ function drawElements(nodes, edges, paper)
 {
 	// paper.clear() //clear out old drawings
 
+  nodeDivider = paper.rect(0,0,0,0).hide();
+
 	//draw edges (below the nodes)
 	for(var i=0, len=edges['keys'].length; i<len; i++){
 		var edge = edges[edges['keys'][i]]
 		edgeIcons[edge.id] = drawEdge(edge, paper)
 	}
 
-	nodeDivider = paper.rect(0,0,0,0).hide();
+	
 
 	//draw nodes
 	for(var i=0, len=nodes['keys'].length; i<len; i++){
