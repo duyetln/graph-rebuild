@@ -341,13 +341,34 @@ function drawElements(nodes, edges, paper)
 		edgeIcons[edge.id] = drawEdge(edge, paper)
 	}
 
-	
+  for (var i=0, len=edges['keys'].length; i<len; i++){
+    var edge = edges[edges['keys'][i]]
 
-	//draw nodes
+    var tobend = []
+	  for(var i=0, len=currEdges['keys'].length; i<len; i++){
+			var e = currEdges[currEdges['keys'][i]]
+			if( (e.a == edge.a && e.b == edge.b) || (e.a == edge.b && e.b == edge.a) )
+				tobend.push(e)
+		}
+		for(var i=1, len=tobend.length; i<=len; i++){
+			var e = tobend[i-1], oldn = e.n
+			if(i==len) //if last guy
+				e.n = (i%2==0 ? i : 0) //then he gets 0 if even, number otherwise
+			else
+				e.n = i //give them their count
+			if(e.n != oldn) { //if our n changed
+				edgeIcons[e.id].remove()
+				edgeIcons[e.id] = drawEdge(e, paper)
+			}
+		}
+  }
+
+  //draw nodes
 	for(var i=0, len=nodes['keys'].length; i<len; i++){
 		var node = nodes[nodes['keys'][i]] //easy access
 		nodeIcons[node.id] = drawNode(node, paper)
 	}
+
 }
 
 var MOVE_TIME = 200
