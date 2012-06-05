@@ -1025,7 +1025,7 @@ var showPreviousPage = function(){
 } 
 function setupPages(){
   var arr = [];
-
+  pages = []
   for (var index in boxNodes){ arr.push(boxNodes[index]); }
 
   arr.sort(function(a,b){
@@ -1914,6 +1914,85 @@ _textWrapp = function(t, width) {
 		t.attr({'text-anchor':'middle'});
 		t.transform('...t0,'+(t.getBBox().height/2)) //recenter
 };
+
+//some handy methods for animating graphs
+function clearGraph(){ //clear the nodes and edges
+  for(var i=0; i < currNodes["keys"].length; i++){nodeIcons[currNodes["keys"][i]].remove();}
+  for(var i=0; i < currEdges["keys"].length; i++){edgeIcons[currEdges["keys"][i]].remove();}
+  nodeIcons ={};
+  edgeIcons ={};
+}
+
+function next(){
+  alert("Next?");
+}
+
+function resetData(){
+currNodes={0:{id:0,name:'ALGAE BLOOMS/DEAD ZONES',x:38,y:50,url:'',h:0},3:{id:3,name:'BAD WEATHER',x:154,y:50,url:'',h:0},4:{id:4,name:'AMOUNT OF SAMAKI CAUGHT',x:270,y:50,url:'',h:0},5:{id:5,name:'COASTAL WATER QUALITY',x:386,y:50,url:'',h:0},6:{id:6,name:'COST OF SAMAKI PER UNIT CATCH',x:502,y:50,url:'',h:0},7:{id:7,name:'SOCIETY AFFLUENCE',x:618,y:50,url:'',h:0},8:{id:8,name:'DEMAND FOR FARM-RAISED FISH FEED (AQUACULTURE)',x:734,y:50,url:'',h:0},10:{id:10,name:'DEMAND FOR LIVESTOCK FEED',x:850,y:50,url:'',h:0},11:{id:11,name:'DEMAND FOR OMEGA-3 AS A FOOD SUPPLEMENT',x:966,y:50,url:'',h:0},12:{id:12,name:'EFFORT PUT INTO CATCHING SAMAKI',x:1082,y:50,url:'',h:0},13:{id:13,name:'EL NINO',x:1198,y:50,url:'',h:0},15:{id:15,name:'LIFESPAN OF SAMAKI',x:1314,y:50,url:'',h:0},16:{id:16,name:'MANAGEMENT AT THE ECOSYSTEM LEVEL',x:1430,y:50,url:'',h:0},17:{id:17,name:'MANAGEMENT OF SAMAKI CATCH',x:1546,y:50,url:'',h:0},18:{id:18,name:'MARINE MAMMALS',x:1662,y:50,url:'',h:0},19:{id:19,name:'SAMAKI POPULATION',x:500,y:450,url:'',h:0},20:{id:20,name:'DISSOLVED OXYGEN LEVELS',x:1778,y:50,url:'',h:0},21:{id:21,name:'NUTRIENTS IN THE WATER',x:1894,y:50,url:'',h:0},22:{id:22,name:'OMEGA CORPORATION PROFITS',x:2010,y:50,url:'',h:0},23:{id:23,name:'PREDATORY BIRD POPULATIONS',x:2126,y:50,url:'',h:0},24:{id:24,name:'PUBLIC INFORMATION TO INCREASE FISH OIL INTAKE',x:2242,y:50,url:'',h:0},25:{id:25,name:'PUBLIC WORRY ABOUT DECREASE OF SAMAKI',x:2358,y:50,url:'',h:0},26:{id:26,name:'REPRODUCTION RATE OF SAMAKI',x:2474,y:50,url:'',h:0},27:{id:27,name:'SALES PRICE PER UNIT CATCH',x:2590,y:50,url:'',h:0},28:{id:28,name:'SOYBEANS SALES',x:2706,y:50,url:'',h:0},29:{id:29,name:'SPORT FISH HEALTH',x:2822,y:50,url:'',h:0},30:{id:30,name:'SPORT FISH POPULATIONS',x:2938,y:50,url:'',h:0},31:{id:31,name:'SCIENTIFIC SPECULATION OF OVERFISHING',x:3054,y:50,url:'',h:0},32:{id:32,name:'SAMAKI INDUSTRY LEADERS\' CLAIM OF HEALTHY FISHERY',x:3170,y:50,url:'',h:0},33:{id:33,name:'DISAGREEMENT OVER SAMAKI POPULATION HEALTH',x:3286,y:50,url:'',h:0},34:{id:34,name:'PRICE OF COMPETING PRODUCTS (SOYBEANS/VEGETABLE OILS)',x:3402,y:50,url:'',h:0},35:{id:35,name:'REPRODUCTION RATE PER UNIT FISH',x:3518,y:50,url:'',h:0},36:{id:36,name:'PRODUCTION FROM INTERNATIONAL FISH OIL COMPETITORS',x:3634,y:50,url:'',h:0},37:{id:37,name:'AMOUNT OF SPORT FISH CAUGHT',x:3750,y:50,url:'',h:0},38:{id:38,name:'HUMAN POPULATION',x:3866,y:50,url:'',h:0},39:{id:39,name:'FOOD EATEN PER FISH (SAMAKI)',x:3982,y:50,url:'',h:0},keys:[0,3,4,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]};
+currEdges={keys:[]};
+
+islands={0:new Island(0,28),3:new Island(3,20),4:new Island(4,52),5:new Island(5,48),6:new Island(6,33),7:new Island(7,12),8:new Island(8,7),10:new Island(10,10),11:new Island(11,9),12:new Island(12,45),13:new Island(13,15),15:new Island(15,14),16:new Island(16,52),17:new Island(17,40),18:new Island(18,47),19:new Island(19,61),20:new Island(20,40),21:new Island(21,31),22:new Island(22,37),23:new Island(23,49),24:new Island(24,6),25:new Island(25,39),26:new Island(26,42),27:new Island(27,23),28:new Island(28,7),29:new Island(29,45),30:new Island(30,53),31:new Island(31,42),32:new Island(32,28),33:new Island(33,30),34:new Island(34,8),35:new Island(35,16),36:new Island(36,11),37:new Island(37,28),38:new Island(38,30),39:new Island(39,28),};
+
+}
+
+function wait(ms){
+  var dt = new Date();
+	dt.setTime(dt.getTime() + ms);
+	while (new Date().getTime() < dt.getTime());
+}
+
+function redrawGraph(){ //redraw and make sure the interactions are still correct
+
+  //draw nodes
+  for(var i=0, len=currNodes['keys'].length; i<len; i++){
+		var node = currNodes[currNodes['keys'][i]] //easy access
+		nodeIcons[node.id] = drawNode(node, myPaper)
+	}
+  boxNodes={}
+  for (var index in nodeIcons){
+    if (isContainedHorizontally({x:currNodes[index].x,y:currNodes[index].y,width:0,height:0}, sbbb)) 
+		boxNodes[currNodes[index].id] = {
+			id:currNodes[index].id, name:currNodes[index].name, x:currNodes[index].x, y:currNodes[index].y
+		};
+		else
+			islands[index].ondeck = false
+  }
+  setupPages();
+  showCurrentPage();
+
+  //draw edges
+  for(var i=0, len=currEdges['keys'].length; i<len; i++){
+		var edge = currEdges[currEdges['keys'][i]]
+		edgeIcons[edge.id] = drawEdge(edge, myPaper)
+	}
+
+  for (var i=0, len=currEdges['keys'].length; i<len; i++){
+    var edge = currEdges[currEdges['keys'][i]]
+
+    var tobend = []
+	  for(var i=0, len=currEdges['keys'].length; i<len; i++){
+			var e = currEdges[currEdges['keys'][i]]
+			if( (e.a == edge.a && e.b == edge.b) || (e.a == edge.b && e.b == edge.a) )
+				tobend.push(e)
+		}
+		for(var i=1, len=tobend.length; i<=len; i++){
+			var e = tobend[i-1], oldn = e.n
+			if(i==len) //if last guy
+				e.n = (i%2==0 ? i : 0) //then he gets 0 if even, number otherwise
+			else
+				e.n = i //give them their count
+			if(e.n != oldn) { //if our n changed
+				edgeIcons[e.id].remove()
+				edgeIcons[e.id] = drawEdge(e, paper)
+			}
+		}
+  }
+  edge_count = 1+currEdges['keys'].length;
+  initIslands();
+
+}
+//end
+
 
 var ISLAND_PATHS = [
 	"m 0,0 -7.088,1.492 -2.999,-5.582 -2.472,-5.198 -0.885,-5.659 2.414,-5.164 1.653,-5.178 3.623,-4.266 4.225,-5.049 6.387,-1.183 6.041,2.246 5.867,2.206 1.856,6.39 4.868,3.944 3.066,6.054 -1.885,6.437 -3.694,5.276 -3.636,5.463 -6.785,0.361 -5.698,-0.188 z",

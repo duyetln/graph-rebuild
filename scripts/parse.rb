@@ -18,9 +18,8 @@ game_num = ARGV[1].to_i
 (!File.file?("#{DATA_DIR}/#{user_id}_#{game_num}.dat")) && abort("Missing #{DATA_DIR}/#{user_id}_#{game_num}.dat")
 (!File.file?("#{GRAPH_DIR}/game.html")) && abort("Missing #{GRAPH_DIR}/game.html")
 
-
-matrix_script = "
-#player #{user_id} game #{game_num}
+#matrix script - a sequence of ruby code to build an adjacency matrix
+matrix_script = "#player: #{user_id} - game: #{game_num}
 #usage: matrix[a][b]={0=>true/false,1=>true/false} where a and b are node ids and integers
 #0 or 1 is the reltype (1 is positive and 0 is negative)
 #note: this is a directed graph so matrix[a][b] represents a edge from a to b, different from matrix[b][a]
@@ -34,10 +33,20 @@ node_ids.each do |a|
 end
 
 "
+#data script - a sequence of nodes and edges reconstruction to load at game initialization
+data_script = ""
 
-script = "//graph sequence of player #{user_id} game #{game_num}\n"
+#animation script - a function to run to animate the whole graph building process
+animation_script = ""
+clear_graph = "clearGraph();\n"
+redraw_graph = "redrawGraph();\n"
+go_next = "next();\n"
+reset = "resetData();\n"
 
-edge_ids = [] #ids of unique edges created; it's common that the same edge is created twice
+
+
+#ids of unique edges created; it's common that the same edge is created twice
+edge_ids = []
 
 File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
   field2 = line.strip.split("|")[2]
@@ -46,9 +55,10 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
 
   if field2.eql?("NODE_MOVED")
     id = info.split(";")[0].split(":")[1].to_i
-    script += "//node moved\n"
-    script += "currNodes[#{id}].x=#{info.split(";")[2].split(":")[1]};\n"
-    script += "currNodes[#{id}].y=#{info.split(";")[3].split(":")[1]};\n"
+    data_script += "//node moved\n"
+    data_script += "currNodes[#{id}].x=#{info.split(";")[2].split(":")[1]};\n"
+    data_script += "currNodes[#{id}].y=#{info.split(";")[3].split(":")[1]};\n"
+
   elsif field2.eql?("EDGE_CREATED")
     id = info.split(";")[0].split(":")[1].to_i
     a = info.split(";")[2].split(":")[1].to_i
@@ -57,9 +67,9 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     if id >= 0 && !edge_ids.include?(id)
       edge_ids << id      
 
-      script += "//edge created\n"
-      script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
-      script += "currEdges[\"keys\"].push(#{id});\n"
+      data_script += "//edge created\n"
+      data_script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
+      data_script += "currEdges[\"keys\"].push(#{id});\n"
 
       matrix_script += "#edge created\n"
       matrix_script += "matrix[#{a}][#{b}][#{reltype}]=true\n"
@@ -70,9 +80,9 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     b = info.split(";")[3].split(":")[1].to_i
     reltype = info.split(";")[4].split(":")[1].to_i
 
-    script += "//edge destroyed\n"
-    script += "delete currEdges[#{id}];\n"
-    script += "currEdges[\"keys\"].splice(currEdges[\"keys\"].indexOf(#{id}),1);\n"
+    data_script += "//edge destroyed\n"
+    data_script += "delete currEdges[#{id}];\n"
+    data_script += "currEdges[\"keys\"].splice(currEdges[\"keys\"].indexOf(#{id}),1);\n"
 
     matrix_script += "#edge destroyed\n"
     matrix_script += "matrix[#{a}][#{b}][#{reltype}]=false\n"
@@ -86,19 +96,25 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     old_b = info.split(";")[6].split(":")[1].to_i
     old_reltype = info.split(";")[7].split(":")[1].to_i
 
-    script += "//edge changed\n"
-    script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
+    data_script += "//edge changed\n"
+    data_script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
 
     matrix_script += "#edge changed\n"
     matrix_script += "matrix[#{old_a}][#{old_b}][#{old_reltype}]=false\n"
     matrix_script += "matrix[#{a}][#{b}][#{reltype}]=true\n"
   end
+
+  if field2.eql?("NODE_MOVED") || field2.eql?("EDGE_CREATED") || field2.eql?("EDGE_DESTROYED") || field2.eql?("EDGE_CHANGED")
+    animation_script += clear_graph + reset + data_script + redraw_graph + go_next +"\n"
+  end
+
 end
 
 
-script += "//end sequence\n"
+data_script = "//graph sequence of player #{user_id} game #{game_num}\n"+data_script+ "//end sequence\n"
+animation_script = "function animateGraph(){\n"+animation_script+"}\n"
 
-File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_graph.html", "w") {|file| file.puts File.read("#{GRAPH_DIR}/game.html").gsub(/\/\/<!-- #REPLACEDATAHERE -->/,script)}
+File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_graph.html", "w") {|file| file.puts File.read("#{GRAPH_DIR}/game.html").gsub(/\/\/<!-- #REPLACEGRAPHDATA -->/,data_script).gsub(/\/\/<!-- #REPLACEANIMATIONDATA -->/,animation_script)}
 
 File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_matrix.txt", "w") {|file| file.puts matrix_script}
 
