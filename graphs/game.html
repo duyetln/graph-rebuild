@@ -76,7 +76,13 @@ var currEdges={keys:[]};
                   drawInitGame(myPaper);
                   initIslands();
 
-                  setTimeout(function(){if (confirm("Run animation? (works best with Google Chrome)")) animateGraph();}, 5000);
+                  setTimeout(function(){
+                    if (confirm("Run animation?"))
+                      var int = setInterval(function(){
+                        animateGraph();
+                        if (stop) clearInterval(int);
+                      },interval);
+                  }, 5000);
                 });
           //]]>
         </script>

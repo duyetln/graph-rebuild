@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'date'
+
 #usage: ruby parse.rb user_id game_num
 
 ROOT_DIR = File.expand_path(File.expand_path(File.dirname(__FILE__))+"/..")
@@ -11,12 +13,15 @@ GRAPH_DIR = "#{ROOT_DIR}/graphs"
 user_id = ARGV[0].to_i
 game_num = ARGV[1].to_i
 
+interval = ARGV[2].to_i
+speed = ARGV[3].to_i
+
 (!File.directory?(DATA_DIR) || Dir.entries(DATA_DIR).empty?) && abort("No data")
 (!File.directory?(LOG_DIR) || Dir.entries(LOG_DIR).empty?) && abort("No logs")
 
-
 (!File.file?("#{DATA_DIR}/#{user_id}_#{game_num}.dat")) && abort("Missing #{DATA_DIR}/#{user_id}_#{game_num}.dat")
 (!File.file?("#{GRAPH_DIR}/game.html")) && abort("Missing #{GRAPH_DIR}/game.html")
+
 
 #matrix script - a sequence of ruby code to build an adjacency matrix
 matrix_script = "#player: #{user_id} - game: #{game_num}
@@ -33,8 +38,11 @@ node_ids.each do |a|
 end
 
 "
+
+
 #data script - a sequence of nodes and edges reconstruction to load at game initialization
 data_script = ""
+
 
 #animation script - a function to run to animate the whole graph building process
 animation_script = ""
@@ -44,22 +52,39 @@ go_next = "next();\n"
 reset = "resetData();\n"
 
 
-
 #ids of unique edges created; it's common that the same edge is created twice
 edge_ids = []
 
+
+#other variables
+start = nil #when "GAME_INITIALIZED" starts
+last = nil  #the last event in game, regardless of what type
+
+
 File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
-  field2 = line.strip.split("|")[2]
+  time_stamp = line.strip.split("|")[0]
+  event = line.strip.split("|")[2]
   info = line.strip.split("|")[3]
+
+  data_code = ""
+  matrix_code = ""
+  animation_code = ""
+
+  now = DateTime.strptime(time_stamp,'%Y%m%d%H%M%S%L')
+  last = now
+
   id = nil
 
-  if field2.eql?("NODE_MOVED")
+  if event.eql?("NODE_MOVED")
     id = info.split(";")[0].split(":")[1].to_i
-    data_script += "//node moved\n"
-    data_script += "currNodes[#{id}].x=#{info.split(";")[2].split(":")[1]};\n"
-    data_script += "currNodes[#{id}].y=#{info.split(";")[3].split(":")[1]};\n"
+    data_code += "//node moved\n"
+    data_code += "currNodes[#{id}].x=#{info.split(";")[2].split(":")[1]};\n"
+    data_code += "currNodes[#{id}].y=#{info.split(";")[3].split(":")[1]};\n"
 
-  elsif field2.eql?("EDGE_CREATED")
+    animation_code += "if (time >= "+((now-start)*24*60*60*1000).to_i.to_s+"){\n"
+    animation_code += data_code+"}\n"
+
+  elsif event.eql?("EDGE_CREATED")
     id = info.split(";")[0].split(":")[1].to_i
     a = info.split(";")[2].split(":")[1].to_i
     b = info.split(";")[3].split(":")[1].to_i
@@ -67,27 +92,35 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     if id >= 0 && !edge_ids.include?(id)
       edge_ids << id      
 
-      data_script += "//edge created\n"
-      data_script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
-      data_script += "currEdges[\"keys\"].push(#{id});\n"
+      data_code += "//edge created\n"
+      data_code += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
+      data_code += "currEdges[\"keys\"].push(#{id});\n"
 
-      matrix_script += "#edge created\n"
-      matrix_script += "matrix[#{a}][#{b}][#{reltype}]=true\n"
+      matrix_code += "#edge created\n"
+      matrix_code += "matrix[#{a}][#{b}][#{reltype}]=true\n"
+
+      animation_code += "if (time >= "+((now-start)*24*60*60*1000).to_i.to_s+"){\n"
+      animation_code += data_code+"}\n"
+
     end
-  elsif field2.eql?("EDGE_DESTROYED")
+
+  elsif event.eql?("EDGE_DESTROYED")
     id = info.split(";")[0].split(":")[1].to_i
     a = info.split(";")[2].split(":")[1].to_i
     b = info.split(";")[3].split(":")[1].to_i
     reltype = info.split(";")[4].split(":")[1].to_i
 
-    data_script += "//edge destroyed\n"
-    data_script += "delete currEdges[#{id}];\n"
-    data_script += "currEdges[\"keys\"].splice(currEdges[\"keys\"].indexOf(#{id}),1);\n"
+    data_code += "//edge destroyed\n"
+    data_code += "delete currEdges[#{id}];\n"
+    data_code += "currEdges[\"keys\"].splice(currEdges[\"keys\"].indexOf(#{id}),1);\n"
 
-    matrix_script += "#edge destroyed\n"
-    matrix_script += "matrix[#{a}][#{b}][#{reltype}]=false\n"
+    matrix_code += "#edge destroyed\n"
+    matrix_code += "matrix[#{a}][#{b}][#{reltype}]=false\n"
 
-  elsif field2.eql?("EDGE_CHANGED")
+    animation_code += "if (time >= "+((now-start)*24*60*60*1000).to_i.to_s+"){\n"
+    animation_code += data_code+"}\n"
+
+  elsif event.eql?("EDGE_CHANGED")
     id = info.split(";")[0].split(":")[1].to_i
     a = info.split(";")[2].split(":")[1].to_i
     b = info.split(";")[3].split(":")[1].to_i
@@ -96,23 +129,45 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     old_b = info.split(";")[6].split(":")[1].to_i
     old_reltype = info.split(";")[7].split(":")[1].to_i
 
-    data_script += "//edge changed\n"
-    data_script += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
+    data_code += "//edge changed\n"
+    data_code += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
 
-    matrix_script += "#edge changed\n"
-    matrix_script += "matrix[#{old_a}][#{old_b}][#{old_reltype}]=false\n"
-    matrix_script += "matrix[#{a}][#{b}][#{reltype}]=true\n"
+    matrix_code += "#edge changed\n"
+    matrix_code += "matrix[#{old_a}][#{old_b}][#{old_reltype}]=false\n"
+    matrix_code += "matrix[#{a}][#{b}][#{reltype}]=true\n"
+
+    animation_code += "if (time >= "+((now-start)*24*60*60*1000).to_i.to_s+"){\n"
+    animation_code += data_code+"}\n"
+
+  elsif event.eql?("GAME_INITIALIZED")
+    start ||= now
   end
 
-  if field2.eql?("NODE_MOVED") || field2.eql?("EDGE_CREATED") || field2.eql?("EDGE_DESTROYED") || field2.eql?("EDGE_CHANGED")
-    animation_script += clear_graph + reset + data_script + redraw_graph + go_next +"\n"
-  end
-
+  data_script += data_code
+  matrix_script += matrix_code
+  animation_script += animation_code
 end
 
+data_script = "//graph sequence of player #{user_id} game #{game_num}\n"+data_script+"//end sequence\n"
 
-data_script = "//graph sequence of player #{user_id} game #{game_num}\n"+data_script+ "//end sequence\n"
-animation_script = "function animateGraph(){\n"+animation_script+"}\n"
+animation_script = "
+var time = 0;
+var interval = #{interval};
+var stop = false;
+
+function animateGraph(){
+"+clear_graph+reset+"
+"+animation_script+"
+"+redraw_graph+"time+=#{speed};
+
+if (time >= "+((last-start)*24*60*60*1000).to_i.to_s+"){
+//last - stop the animation
+stop = true;
+alert('Animation ends');
+}
+}
+"
+
 
 File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_graph.html", "w") {|file| file.puts File.read("#{GRAPH_DIR}/game.html").gsub(/\/\/<!-- #REPLACEGRAPHDATA -->/,data_script).gsub(/\/\/<!-- #REPLACEANIMATIONDATA -->/,animation_script)}
 

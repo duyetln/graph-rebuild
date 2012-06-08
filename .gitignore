@@ -2,3 +2,4 @@ logs/*
 data/*
 graphs/*graph.html
 graphs/*matrix.txt
+graphs/*matrix.rb
