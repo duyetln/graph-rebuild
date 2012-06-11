@@ -5,4 +5,4 @@ Ignore the stuffs in "assets" folder
 Usage:
 _ Run split.sh providing the log path to split data according to player ids. The script will create 2 folders: "logs" and "data". The log will be copied into the "logs" and will be split into small files according to player ids. These small files will be put into "data" folder.
 Example of running this script: /path/to/scripts/split.sh /path/to/game_log.txt
-_ More instructions comming soon
+_ Run parse.rb providing the user id, game number, interval, speed as parameters in order. Interval and speed are in milliseconds. Example of running this script: ruby parse.rb 12345678 1 1000 1000. The script will generate a graph for this game and a chunk of ruby code to contruct the adjacency matrix for the graph. Both the code and the graph will be put in the "graphs" folder.
