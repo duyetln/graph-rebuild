@@ -22,6 +22,8 @@ speed = ARGV[3].to_i
 (!File.file?("#{DATA_DIR}/#{user_id}_#{game_num}.dat")) && abort("Missing #{DATA_DIR}/#{user_id}_#{game_num}.dat")
 (!File.file?("#{GRAPH_DIR}/game.html")) && abort("Missing #{GRAPH_DIR}/game.html")
 
+puts "Generating graphs and matrix for user #{user_id} game #{game_num}"
+
 
 #matrix script - a sequence of ruby code to build an adjacency matrix
 matrix_script = "#player: #{user_id} - game: #{game_num}
@@ -59,6 +61,7 @@ edge_ids = []
 #other variables
 start = nil #when "GAME_INITIALIZED" starts
 last = nil  #the last event in game, regardless of what type
+warning = ""
 
 
 File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
@@ -110,6 +113,8 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     b = info.split(";")[3].split(":")[1].to_i
     reltype = info.split(";")[4].split(":")[1].to_i
 
+    puts "WARNING: edge #{id} is destroyed before created" && warning += "WARNING: edge #{id} is destroyed before created" unless edge_ids.include?(id)
+
     data_code += "//edge destroyed\n"
     data_code += "delete currEdges[#{id}];\n"
     data_code += "currEdges[\"keys\"].splice(currEdges[\"keys\"].indexOf(#{id}),1);\n"
@@ -128,6 +133,8 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     old_a = info.split(";")[5].split(":")[1].to_i
     old_b = info.split(";")[6].split(":")[1].to_i
     old_reltype = info.split(";")[7].split(":")[1].to_i
+
+    puts "WARNING: edge #{id} is changed before created" && warning += "WARNING: edge #{id} is changed before created" unless edge_ids.include?(id)
 
     data_code += "//edge changed\n"
     data_code += "currEdges[#{id}] = {id:#{id}, a:currNodes[#{a}], b:currNodes[#{b}], reltype:#{reltype}, n:0};\n"
@@ -148,9 +155,13 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
   animation_script += animation_code
 end
 
-data_script = "//graph sequence of player #{user_id} game #{game_num}\n"+data_script+"//end sequence\n"
+data_script = "//graph sequence of player #{user_id} game #{game_num}\n//#{warning}\n"+data_script+"//end sequence\n"
+
+matrix_script = "##{warning}\n"+matrix_script
 
 animation_script = "
+//#{warning}
+
 var time = 0;
 var interval = #{interval};
 var stop = false;
@@ -167,7 +178,6 @@ alert('Animation ends');
 }
 }
 "
-
 
 File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_graph.html", "w") {|file| file.puts File.read("#{GRAPH_DIR}/game.html").gsub(/\/\/<!-- #REPLACEGRAPHDATA -->/,data_script).gsub(/\/\/<!-- #REPLACEANIMATIONDATA -->/,animation_script)}
 
