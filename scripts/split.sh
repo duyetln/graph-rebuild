@@ -6,8 +6,12 @@
 #after some investigation, the log pattern for a game looks like this:
 # clock_started  (0 or 1 occurrence)
 # game_paused:help (0 or 1 occurrence) # I don't understand why sometimes this event happens before game initialization
-# game initialized (1 occurrence)
+# game_initialized (1 occurrence)
 # other events (0 or many occurrences)
+
+
+#UPDATED log pattern for a game:
+#additional to the above pattern, sometimes clock_started could appear after game_initialized
 
 #get the root directory and others
 ROOT_DIR="$( cd "$( dirname "$0" )"/.. && pwd )"
@@ -38,34 +42,63 @@ do
   
   echo "Retrieving data for player $id..."
 
-  game_num=0
-  game_start_num=0
-  flag=false #true means a game clock is encountered
-  unexpected=false
+  game_num=1
+
+  line_num=0
+  current_start=0
+  current_clock=0
+  last_start=-1
+  last_clock=-1
+  inc=false
   
   #get all data corresponding to an id and sort them
   for line in `cat $LOG_DIR/$LOG_NAME | grep -w $id | sort -t"|" -k2,2 -k1,1` 
   do
+    line_num=$((line_num+1))
+
+
     if [ `echo $line | grep -w  $GAME_CLOCK | wc -l` -gt 0 ] #if this line contains $GAME_CLOCK
     then
-      game_num=$((game_num+1))
-      flag=true
+      current_clock=$line_num
     elif [ `echo $line | grep -w  $GAME_START | wc -l` -gt 0 ] #if this line contains $GAME_START
     then
-      if ! $flag && ! $unexpected
-      then
-        game_num=$((game_num+1))
-      fi
-      flag=false
-      game_start_num=$((game_start_num+1))
-      unexpected=false
+      current_start=$line_num
     fi
 
-    if [ $game_num -eq 0 ] #this is to deal with unexpected game pause before initialization; output this line to game_1 log
+
+    if [[ `echo $line | grep -w  $GAME_CLOCK | wc -l` -gt 0 || `echo $line | grep -w  $GAME_START | wc -l` -gt 0 ]]
+    then
+      if [[ `expr $current_start - $current_clock` -gt 3 || `expr $current_clock - $current_start` -gt 3 ]]
+      then
+        game_num=$((game_num+1))
+        last_start=0
+        last_clock=0
+      else
+        if [[ ($current_clock -eq $last_clock && $current_start -ne $last_start) || ($current_clock -ne $last_clock && $current_start -eq $last_start) ]]
+        then
+          if ! $inc
+          then
+            game_num=$((game_num+1))
+            inc=true
+          fi
+        elif [[ $current_clock -gt 0 && $current_clock -ne $last_clock && $current_start -gt 0 && $current_start -ne $last_start  ]]
+        then
+          last_clock=$current_clock
+          last_start=$current_start
+          inc=false
+        fi
+      fi
+    fi
+
+
+    if [ $game_num -eq 0 ]
     then
       game_num=$((game_num+1))
-      unexpected=true
+      inc=true
     fi
+
+    #echo $line
+    #echo "$game_num $current_start $last_start $current_clock $last_clock $inc"
 
     echo $line >> $DATA_DIR/"$id"_"$game_num".dat
 

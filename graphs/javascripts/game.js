@@ -1966,24 +1966,27 @@ function redrawGraph(){ //redraw and make sure the interactions are still correc
 		edgeIcons[edge.id] = drawEdge(edge, myPaper)
 	}
 
-  for (var i=0, len=currEdges['keys'].length; i<len; i++){
-    var edge = currEdges[currEdges['keys'][i]]
+  for (var x=0, lenx=currEdges['keys'].length; x<lenx; x++){
+    var edge = currEdges[currEdges['keys'][x]];
 
-    var tobend = []
-	  for(var i=0, len=currEdges['keys'].length; i<len; i++){
-			var e = currEdges[currEdges['keys'][i]]
+    var tobend = [];
+	  for(var y=0, leny=currEdges['keys'].length; y<leny; y++){
+		  var e = currEdges[currEdges['keys'][y]];
 			if( (e.a == edge.a && e.b == edge.b) || (e.a == edge.b && e.b == edge.a) )
-				tobend.push(e)
-		}
-		for(var i=1, len=tobend.length; i<=len; i++){
-			var e = tobend[i-1], oldn = e.n
-			if(i==len) //if last guy
-				e.n = (i%2==0 ? i : 0) //then he gets 0 if even, number otherwise
+			 tobend.push(e);
+		}   
+
+		for(var z=1, lenz=tobend.length; z<=lenz; z++){
+			var e = tobend[z-1], oldn = e.n;
+
+			if(z==lenz) //if last guy
+		    e.n = (z%2==0 ? z : 0); //then he gets 0 if even, number otherwise
 			else
-				e.n = i //give them their count
+				e.n = z; //give them their count
+      
 			if(e.n != oldn) { //if our n changed
-				edgeIcons[e.id].remove()
-				edgeIcons[e.id] = drawEdge(e, paper)
+			 edgeIcons[e.id].remove();
+			 edgeIcons[e.id] = drawEdge(e, paper);
 			}
 		}
   }

@@ -65,9 +65,9 @@ warning = ""
 
 
 File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
-  time_stamp = line.strip.split("|")[0]
-  event = line.strip.split("|")[2]
-  info = line.strip.split("|")[3]
+  time_stamp = line.strip.split("|")[0].to_s
+  event = line.strip.split("|")[2].to_s
+  info = line.strip.split("|")[3].to_s
 
   data_code = ""
   matrix_code = ""
@@ -146,7 +146,7 @@ File.open("#{DATA_DIR}/#{user_id}_#{game_num}.dat", "r").each_line do |line|
     animation_code += "if (time >= "+((now-start)*24*60*60*1000).to_i.to_s+"){\n"
     animation_code += data_code+"}\n"
 
-  elsif event.eql?("GAME_INITIALIZED")
+  elsif event.eql?("GAME_INITIALIZED") || event.eql?("CLOCK_STARTED")
     start ||= now
   end
 
@@ -169,19 +169,21 @@ var stop = false;
 function animateGraph(){
 "+clear_graph+reset+"
 "+animation_script+"
-"+redraw_graph+"time+=#{speed};
-
+"+redraw_graph+"
 if (time >= "+((last-start)*24*60*60*1000).to_i.to_s+"){
 //last - stop the animation
 stop = true;
 alert('Animation ends');
 }
+
+time+=#{speed};
+
 }
 "
 
 File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_graph.html", "w") {|file| file.puts File.read("#{GRAPH_DIR}/game.html").gsub(/\/\/<!-- #REPLACEGRAPHDATA -->/,data_script).gsub(/\/\/<!-- #REPLACEANIMATIONDATA -->/,animation_script)}
 
-File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_matrix.txt", "w") {|file| file.puts matrix_script}
+File.open("#{GRAPH_DIR}/#{user_id}_#{game_num}_matrix.rb", "w") {|file| file.puts matrix_script}
 
 puts "Done!"
 
