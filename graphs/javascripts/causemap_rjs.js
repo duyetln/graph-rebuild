@@ -341,38 +341,29 @@ function drawElements(nodes, edges, paper)
 		edgeIcons[edge.id] = drawEdge(edge, paper);
 	}
 
-  var bent = []
   for (var x=0, lenx=edges['keys'].length; x<lenx; x++){
     var edge = edges[edges['keys'][x]];
 
-    if (true){
-      var tobend = [];
-	    for(var y=0, leny=currEdges['keys'].length; y<leny; y++){
-			  var e = currEdges[currEdges['keys'][y]];
-			  if( (e.a == edge.a && e.b == edge.b) || (e.a == edge.b && e.b == edge.a) )
-				  tobend.push(e);
-		  }   
+    var tobend = [];
+	  for(var y=0, leny=currEdges['keys'].length; y<leny; y++){
+		  var e = currEdges[currEdges['keys'][y]];
+			if( (e.a == edge.a && e.b == edge.b) || (e.a == edge.b && e.b == edge.a) )
+			 tobend.push(e);
+		}   
 
-		  for(var z=1, lenz=tobend.length; z<=lenz; z++){
-			  var e = tobend[z-1], oldn = e.n;
-        
-        bent.push(e.id);
+		for(var z=1, lenz=tobend.length; z<=lenz; z++){
+			var e = tobend[z-1], oldn = e.n;
 
-			  if(z==lenz) //if last guy
-				  e.n = (z%2==0 ? z : 0); //then he gets 0 if even, number otherwise
-			  else
-				  e.n = z; //give them their count
-          
-        console.log("edge "+e.id+" "+z);
-        console.log(oldn);
-        console.log(e.n);
+			if(z==lenz) //if last guy
+		    e.n = (z%2==0 ? z : 0); //then he gets 0 if even, number otherwise
+			else
+				e.n = z; //give them their count
       
-			  if(e.n != oldn) { //if our n changed
-				  edgeIcons[e.id].remove();
-				  edgeIcons[e.id] = drawEdge(e, paper);
-			  }
-		  }
-    }
+			if(e.n != oldn) { //if our n changed
+			 edgeIcons[e.id].remove();
+			 edgeIcons[e.id] = drawEdge(e, paper);
+			}
+		}
   }
 
   //draw nodes
